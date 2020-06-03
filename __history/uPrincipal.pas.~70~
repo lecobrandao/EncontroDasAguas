@@ -1,0 +1,174 @@
+unit uPrincipal;
+
+interface
+
+uses
+  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
+  FMX.Types, FMX.Controls, FMX.Graphics, FMX.Forms, FMX.Dialogs, FMX.TabControl, System.Actions, FMX.ActnList,
+  FMX.Objects, FMX.StdCtrls, FMX.Controls.Presentation, FMX.Ani, FMX.Layouts,
+  FMX.ExtCtrls, FMX.Edit, FMX.EditBox, FMX.NumberBox, Math;
+
+type
+  TfrmPrincipal = class(TForm)
+    TopToolBar: TToolBar;
+    ToolBarLabel: TLabel;
+    BottomToolBar: TToolBar;
+    TABCPrincipal: TTabControl;
+    TABHome: TTabItem;
+    TABDados: TTabItem;
+    BTNAnual: TButton;
+    BTNMensal: TButton;
+    btnBack: TSpeedButton;
+    Panel7: TPanel;
+    Label6: TLabel;
+    Panel1: TPanel;
+    Label1: TLabel;
+    Panel2: TPanel;
+    Label2: TLabel;
+    Panel3: TPanel;
+    Label4: TLabel;
+    Panel4: TPanel;
+    Label3: TLabel;
+    LBVlrParcelaPO: TLabel;
+    Panel5: TPanel;
+    Label5: TLabel;
+    LBVlrFinanciamento: TLabel;
+    Panel8: TPanel;
+    Label8: TLabel;
+    BTNCalcularFinMensal: TButton;
+    Panel9: TPanel;
+    LBValorParcFinanciamento: TLabel;
+    BTNCalcularVlrFin: TButton;
+    Panel6: TPanel;
+    Label7: TLabel;
+    Label9: TLabel;
+    ImageViewer1: TImageViewer;
+    NBVlrLote: TEdit;
+    NBVlrPreObra: TEdit;
+    NBQtdParcelasPO: TEdit;
+    NBQtdParcelasFin: TEdit;
+    NBPercentualFin: TEdit;
+    procedure FormCreate(Sender: TObject);
+    procedure FormKeyUp(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
+    procedure BTNCalcularFinMensalClick(Sender: TObject);
+    procedure btnBackClick(Sender: TObject);
+    procedure BTNMensalClick(Sender: TObject);
+    procedure BTNCalcularVlrFinClick(Sender: TObject);
+    procedure NBVlrLoteChange(Sender: TObject);
+  private
+    { Private declarations }
+    VlrFinanciamento: Extended;
+    Juros: Extended;
+  public
+    { Public declarations }
+  end;
+
+var
+  frmPrincipal: TfrmPrincipal;
+
+implementation
+
+{$R *.fmx}
+{$R *.LgXhdpiPh.fmx ANDROID}
+{$R *.iPhone4in.fmx IOS}
+
+procedure TfrmPrincipal.btnBackClick(Sender: TObject);
+begin
+  TABCPrincipal.ActiveTab := TABHome;
+  ToolBarLabel.Text := 'Encontro das Águas Residence';
+end;
+
+procedure TfrmPrincipal.BTNCalcularFinMensalClick(Sender: TObject);
+var ix, QtdParc: Integer;
+begin
+  if LBVlrFinanciamento.Text = '' then
+  begin
+    ShowMessage('Calcule o valor do financiamento!');
+    Exit;
+  end;
+  if NBQtdParcelasFin.Value = 0 then
+  begin
+    ShowMessage('Informe a quantidade de parcelas!');
+    Exit;
+  end;
+  if NBPercentualFin.Value = 0 then
+  begin
+    ShowMessage('Informe o percentual financiado!');
+    Exit;
+  end;
+
+  QtdParc := Trunc(NBQtdParcelasFin.Value);
+  LBValorParcFinanciamento.Text := FloatToStrF(Payment(Juros, QtdParc, VlrFinanciamento * NBPercentualFin.Value/100, 0, ptEndOfPeriod)*-1, ffCurrency, 18, 2);
+end;
+
+procedure TfrmPrincipal.BTNCalcularVlrFinClick(Sender: TObject);
+begin
+  if StrToFloatDef(NBVlrLote.Text,0) = 0 then
+  begin
+    ShowMessage('Informe o valor do Lote!');
+    Exit;
+  end;
+  if NBVlrPreObra.Value = 0 then
+  begin
+    ShowMessage('Informe o valor do Pré-obra!');
+    Exit;
+  end;
+  if NBQtdParcelasPO.Value = 0 then
+  begin
+    ShowMessage('Informe a quantidade de parcelas da pré-obra!');
+    Exit;
+  end;
+
+  LBVlrParcelaPO.Text     := FloatToStrF(NBVlrPreObra.Value / NBQtdParcelasPO.Value, ffCurrency, 18, 2);
+  VlrFinanciamento        := StrToFloatDef(NBVlrLote.Text,0) - NBVlrPreObra.Value;
+  LBVlrFinanciamento.Text := FloatToStrF(VlrFinanciamento, ffCurrency, 18, 2);
+end;
+
+procedure TfrmPrincipal.BTNMensalClick(Sender: TObject);
+begin
+  if Sender = BTNMensal then
+  begin
+    Juros := 0.009489;
+    ToolBarLabel.Text := 'Simular Plano Mensal';
+  end
+  else
+  begin
+    Juros := 0.12;
+    ToolBarLabel.Text := 'Simular Plano Anual';
+  end;
+
+  NBQtdParcelasFin.Text := '0';
+  NBPercentualFin.Text  := '0';
+  LBValorParcFinanciamento.Text := '';
+
+  TABCPrincipal.ActiveTab := TABDados;
+end;
+
+procedure TfrmPrincipal.FormCreate(Sender: TObject);
+begin
+  { This defines the default active tab at runtime }
+  TABCPrincipal.First(TTabTransition.None);
+  LBVlrParcelaPO.Text := '';
+  LBVlrFinanciamento.Text := '';
+end;
+
+procedure TfrmPrincipal.FormKeyUp(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
+begin
+  if (Key = vkHardwareBack) and (TABCPrincipal.TabIndex <> 0) then
+  begin
+    TABCPrincipal.ActiveTab := TABHome;
+    ToolBarLabel.Text := 'Encontro das Águas Residence';
+    Key := 0;
+  end;
+end;
+
+procedure TfrmPrincipal.NBVlrLoteChange(Sender: TObject);
+begin
+  if (TEdit(Sender).Text <> '') and (StrToFloatDef(TEdit(Sender).Text,0) = 0) then
+  begin
+    ShowMessage('Informe apenas números!');
+    TEdit(Sender).Text := '';
+  end;
+end;
+
+end.
